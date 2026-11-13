@@ -69,17 +69,23 @@ cbuffer LightPerFrame : register(b11)
 };
 
 // ピクセルシェーダー
+
 float4 PS(PSInput In) : SV_Target0
 {
-    // 明示的に法線を正規化（モデルスケール非均等だと崩れるため）
+    // 法線を正規化
     float3 N = normalize(In.nrmW);
 
-    // ライトループ
-    float4 diffAccum = ambientColor; // 環境光
+    // 環境光
+    float4 diffAccum = ambientColor;
+
+    // 拡散反射の計算
+    float diffuse = saturate(dot(N, normalize(directionW)));
+
+    // ディレクショナルライトを加算
+    diffAccum += directionalColor * diffuse;
 
     // カラー合成
     float4 color = float4(diffAccum.rgb, 1) * baseColor;
 
-    // テクスチャの色を出力
     return color;
 }

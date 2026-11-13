@@ -3,6 +3,8 @@
 #include <UniDx/D3DManager.h>
 #include <UniDx/Input.h>
 
+#include <algorithm>
+
 
 using namespace UniDx;
 
@@ -12,10 +14,12 @@ namespace
     struct CBParam // register(b0)
     {
         Color baseColor;
+        float brightness;
+        float padding[3];
     };
     constexpr int CBSlot = 0;
 
-    Color colorTable[] =
+    /*Color colorTable[] =
     {
         Color(1, 1, 1),
         Color(1, 1, 0),
@@ -24,7 +28,19 @@ namespace
         Color(0.5, 0, 0),
         Color(0, 0.5, 0),
         Color(0, 0, 0.5),
+    };*/
+
+    Color colorTable[] =
+    {
+        Color(1, 0, 0),       // 赤
+        Color(0, 1, 0),       // 緑
+        Color(0, 0, 1),       // 青
+        Color(1, 0.5, 0),     // オレンジ
+        Color(0.5, 0, 1),     // 紫
+        Color(1, 0.4, 0.7),   // ピンク
+        Color(1, 1, 1),       // 白
     };
+
     constexpr int tableSize = sizeof(colorTable) / sizeof(Color);
 }
 
@@ -44,16 +60,41 @@ void CBController::Start()
 
 void CBController::Update()
 {
-    if(Input::GetKeyDown(Keyboard::Down))
+    /*if(Input::GetKeyDown(Keyboard::Down))
+    {
+        colorIndex = (colorIndex + 1) % tableSize;
+    }*/
+
+    if (Input::GetKeyDown(Keyboard::Right))
     {
         colorIndex = (colorIndex + 1) % tableSize;
     }
+
+    if (Input::GetKeyDown(Keyboard::Left))
+    {
+        colorIndex = (colorIndex - 1 + tableSize) % tableSize;
+    }
+
+    if (Input::GetKeyDown(Keyboard::Up))
+    {
+        brightness += 0.1f;
+    }
+
+    if (Input::GetKeyDown(Keyboard::Down))
+    {
+        brightness -= 0.1f;
+    }
+
+    brightness = std::clamp(brightness, 0.0f, 2.0f);
 
 
     CBParam cb;
 
     // カラーテーブルから現在のインデクスの色を設定
     cb.baseColor = colorTable[colorIndex];
+
+    // 明るさを設定
+    cb.brightness = brightness;
 
     // 定数バッファを更新
     D3DManager::getInstance()->GetContext()->UpdateSubresource(constantBuffer.Get(), 0, nullptr, &cb, 0, 0);

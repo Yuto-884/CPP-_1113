@@ -7,6 +7,8 @@
 cbuffer CBParam : register(b0)
 {
     float4 baseColor;
+    float brightness;
+    float3 padding;
 };
 
 // ----------------------------------------------------------
@@ -66,7 +68,7 @@ PSInput VS(VSInput vin)
     Out.pos = p;
     
     float c = worldPos.y * 0.2 + 0.5;
-    Out.color = baseColor * float4(c, c, c, 1);
+    Out.color = baseColor * float4(c, c, c, 1) * brightness;
 
     return Out;
 }
