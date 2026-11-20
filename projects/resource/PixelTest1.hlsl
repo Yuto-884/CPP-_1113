@@ -7,6 +7,8 @@
 cbuffer CBParam : register(b0)
 {
     float4 baseColor;
+    float brightness;
+    float3 padding;
 };
 
 // ----------------------------------------------------------
@@ -85,7 +87,7 @@ float4 PS(PSInput In) : SV_Target0
     diffAccum += directionalColor * diffuse;
 
     // カラー合成
-    float4 color = float4(diffAccum.rgb, 1) * baseColor;
+    float4 color = float4(diffAccum.rgb, 1) * baseColor * brightness;
 
     return color;
 }
