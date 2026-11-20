@@ -8,6 +8,10 @@
 
 #pragma comment(lib, "d3dcompiler.lib")
 
+namespace
+{
+	constexpr char8_t u8BOM[] = { 0xEF, 0xBB,0xBF };
+}
 
 namespace UniDx
 {
@@ -53,11 +57,32 @@ const std::array< D3D11_INPUT_ELEMENT_DESC, 3> VertexPNC::layout =
 
 bool Shader::compile(const u8string& filePath, const D3D11_INPUT_ELEMENT_DESC* layout, size_t layout_size)
 {
+	// 指定パスからファイルを読み込む]
+	std::filesystem::path path(filePath);
+	const auto sourceName = path.string();
+	const auto sourceName16 = ToUtf16(filePath);
+
+	ComPtr<ID3DBlob> source;
+	if(FAILED(D3DReadFileToBlob(sourceName16.c_str(), &source)))
+	{
+		Debug::Log(u8"シェーダーファイルの読み込みに失敗しました");
+		return false;
+	}
+
+	// BOMの検査
+	auto* data = static_cast<const char8_t*>(source->GetBufferPointer());
+	auto size = source->GetBufferSize();
+	if(size >= sizeof(u8BOM) && data[0] == u8BOM[0] && data[1] == u8BOM[1] && data[2] == u8BOM[2])
+	{
+		data += sizeof(u8BOM);
+		size -= sizeof(u8BOM);
+	}
+
 	ID3DBlob* error = nullptr;
 
 	// 頂点シェーダーを読み込み＆コンパイル
 	ComPtr<ID3DBlob> compiledVS;
-	if (FAILED(D3DCompileFromFile(ToUtf16(filePath).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VS", "vs_5_0", 0, 0, &compiledVS, &error)))
+	if (FAILED(D3DCompile(data, size, sourceName.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VS", "vs_5_0", 0, 0, &compiledVS, &error)))
 	{
 		Debug::Log(u8"頂点シェーダーのコンパイルエラー");
 		if (error)
@@ -68,7 +93,7 @@ bool Shader::compile(const u8string& filePath, const D3D11_INPUT_ELEMENT_DESC* l
 	}
 	// ピクセルシェーダーを読み込み＆コンパイル
 	ComPtr<ID3DBlob> compiledPS;
-	if (FAILED(D3DCompileFromFile(ToUtf16(filePath).c_str(), nullptr, nullptr, "PS", "ps_5_0", 0, 0, &compiledPS, &error)))
+	if (FAILED(D3DCompile(data, size, sourceName.c_str(), nullptr, nullptr, "PS", "ps_5_0", 0, 0, &compiledPS, &error)))
 	{
 		Debug::Log(u8"ピクセルシェーダーのコンパイルエラー");
 		if (error)
@@ -98,7 +123,6 @@ bool Shader::compile(const u8string& filePath, const D3D11_INPUT_ELEMENT_DESC* l
 		return false;
 	}
 
-	std::filesystem::path path(filePath);
 	fileName = StringId::intern(path.filename().u8string());
 //	Debug::Log(fileName + L"は正常にコンパイルできました");
 

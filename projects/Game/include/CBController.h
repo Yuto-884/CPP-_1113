@@ -7,6 +7,9 @@
 class CBController : public UniDx::Behaviour
 {
     float brightness = 1.0f;
+    float waveStrength = 1.0f;
+    float specularStrength = 1.0f;
+
 
 public:
     virtual void Start() override;

@@ -11,11 +11,13 @@ using namespace UniDx;
 namespace
 {
     // 定数バッファ（型定義自体はシェーダーに伝わらないことに注意）
-    struct CBParam // register(b0)
+    struct CBParam
     {
         Color baseColor;
         float brightness;
-        float padding[3];
+        float waveStrength;
+        float specularStrength;
+        float padding;
     };
     constexpr int CBSlot = 0;
 
@@ -87,6 +89,32 @@ void CBController::Update()
 
     brightness = std::clamp(brightness, 0.0f, 2.0f);
 
+    // 波の強さ
+    if (Input::GetKeyDown(Keyboard::Q))
+    {
+        waveStrength -= 0.1f;
+    }
+
+    if (Input::GetKeyDown(Keyboard::E))
+    {
+        waveStrength += 0.1f;
+    }
+
+    // 光沢の強さ
+    if (Input::GetKeyDown(Keyboard::Z))
+    {
+        specularStrength -= 0.1f;
+    }
+
+    if (Input::GetKeyDown(Keyboard::X))
+    {
+        specularStrength += 0.1f;
+    }
+
+    // 値が範囲外にならないようにする
+    waveStrength = std::clamp(waveStrength, 0.0f, 3.0f);
+    specularStrength = std::clamp(specularStrength, 0.0f, 3.0f);
+
 
     CBParam cb;
 
@@ -95,6 +123,12 @@ void CBController::Update()
 
     // 明るさを設定
     cb.brightness = brightness;
+
+    // 波の強さを設定
+    cb.waveStrength = waveStrength;
+
+    // 光沢の強さを設定
+    cb.specularStrength = specularStrength;
 
     // 定数バッファを更新
     D3DManager::getInstance()->GetContext()->UpdateSubresource(constantBuffer.Get(), 0, nullptr, &cb, 0, 0);
